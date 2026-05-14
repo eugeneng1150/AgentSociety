@@ -609,6 +609,54 @@ Remember: You are simulating a real person living in a simulated world. Your beh
         )
         return ctx, answer
 
+    def _extract_env_list_result(self, env_result: Any, response: str, key: str) -> list:
+        """Extract a list from environment code execution result.
+
+        Tries multiple strategies: ctx dict lookup, JSON parse, Python literal eval.
+        Returns empty list if all strategies fail.
+        """
+        import ast
+        import json as _json
+
+        # Strategy 1: direct key in ctx dict
+        if isinstance(env_result, dict):
+            val = env_result.get(key)
+            if isinstance(val, list):
+                return val
+            nested = env_result.get("results", {})
+            if isinstance(nested, dict):
+                val = nested.get(key)
+                if isinstance(val, list):
+                    return val
+
+        # Strategy 2: parse response string
+        if response:
+            # try JSON
+            try:
+                parsed = _json.loads(response)
+                if isinstance(parsed, list):
+                    return parsed
+                if isinstance(parsed, dict):
+                    val = parsed.get(key)
+                    if isinstance(val, list):
+                        return val
+            except (_json.JSONDecodeError, ValueError):
+                pass
+
+            # try Python literal (handles repr output like [{'round': 1, ...}])
+            try:
+                parsed = ast.literal_eval(response.strip())
+                if isinstance(parsed, list):
+                    return parsed
+                if isinstance(parsed, dict):
+                    val = parsed.get(key)
+                    if isinstance(val, list):
+                        return val
+            except (ValueError, SyntaxError):
+                pass
+
+        return []
+
     async def init(
         self,
         env: RouterBase,

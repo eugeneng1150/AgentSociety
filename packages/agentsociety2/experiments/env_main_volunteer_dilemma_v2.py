@@ -13,6 +13,10 @@ from datetime import datetime
 import logging
 import numpy as np
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Disable telemetry before any imports
 os.environ.setdefault("MEM0_TELEMETRY", "False")
 os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
