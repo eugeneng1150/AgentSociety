@@ -16,7 +16,16 @@ from agentsociety.logger import get_logger
 from .cooperation_block import CooperationBlock
 
 
+class MortalAgentParams(SocietyAgentConfig):
+    cooperation_cost: float = 15.0
+    daily_maintenance: float = 5.0
+    cooperation_multiplier: float = 2.5
+    death_threshold: float = 20.0
+
+
 class MortalSocietyAgent(SocietyAgent):
+    ParamsType = MortalAgentParams
+
     StatusAttributes = SocietyAgent.StatusAttributes + [
         MemoryAttribute(
             name="is_alive",
@@ -40,7 +49,7 @@ class MortalSocietyAgent(SocietyAgent):
             name="resource_pool",
             type=float,
             default_or_value=100.0,
-            description="agent's resource pool (dies below 20)",
+            description="agent's resource pool (dies below threshold)",
         ),
         MemoryAttribute(
             name="cooperation_tendency",
@@ -62,7 +71,7 @@ class MortalSocietyAgent(SocietyAgent):
         name: str,
         toolbox: AgentToolbox,
         memory: Memory,
-        agent_params: Optional[SocietyAgentConfig] = None,
+        agent_params: Optional[MortalAgentParams] = None,
         blocks: Optional[list[Block]] = None,
     ) -> None:
         super().__init__(
@@ -73,9 +82,14 @@ class MortalSocietyAgent(SocietyAgent):
             agent_params=agent_params,
             blocks=blocks,
         )
+        params = agent_params or MortalAgentParams()
         self.cooperation_block = CooperationBlock(
             toolbox=self._toolbox,
             agent_memory=self.memory,
+            cooperation_cost=params.cooperation_cost,
+            daily_maintenance=params.daily_maintenance,
+            cooperation_multiplier=params.cooperation_multiplier,
+            death_threshold=params.death_threshold,
         )
         self._last_cooperation_day = -1
 
